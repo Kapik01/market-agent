@@ -1,0 +1,6 @@
+.env
+alert_state.json
+market_agent.log
+__pycache__/
+*.pyc
+.pytest_cache/
