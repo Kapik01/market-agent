@@ -10,18 +10,23 @@ DISCORD_MAX_LENGTH = 2000
 def post_to_discord(webhook_url: str, message: str) -> bool:
     if len(message) > DISCORD_MAX_LENGTH:
         message = message[: DISCORD_MAX_LENGTH - 3] + "..."
-    response = requests.post(webhook_url, json={"content": message}, timeout=10)
+    try:
+        response = requests.post(webhook_url, json={"content": message}, timeout=10)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Discord post network error: {e}")
+        return False
     if response.status_code == 204:
         return True
-    logger.error(f"Discord post failed: {response.status_code} {response.text}")
+    logger.error(f"Discord post failed: {response.status_code} {response.text[:200]}")
     return False
 
 
 def post_with_retry(webhook_url: str, message: str, retries: int = 3) -> bool:
+    """Retry up to `retries` total attempts. On rate-limit (429), sleeps 5s best-effort."""
     for attempt in range(retries):
         if post_to_discord(webhook_url, message):
             return True
         if attempt < retries - 1:
             time.sleep(5)
-    logger.error(f"Discord post failed after {retries} attempts")
+    logger.error(f"Discord post failed after {retries} total attempts")
     return False
