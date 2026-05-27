@@ -95,3 +95,18 @@ def test_check_thresholds_triggers_crypto_alert():
     alerts = check_thresholds(market_data)
     assert any(a["ticker"] == "BTC" for a in alerts)
     assert any(a["direction"] == "DOWN" for a in alerts)
+
+
+def test_check_thresholds_triggers_altcoin_alert():
+    market_data = {
+        "stocks": {},
+        "crypto": {
+            "BTC": {"price": 50000, "change_1h": 1.0},  # below threshold, not BTC/ETH
+            "SOL": {"price": 150, "change_1h": 12.0},   # above 10% threshold
+        },
+    }
+    alerts = check_thresholds(market_data)
+    assert any(a["ticker"] == "SOL" for a in alerts)
+    assert any(a["type"] == "crypto" for a in alerts)
+    btc_alerts = [a for a in alerts if a["ticker"] == "BTC"]
+    assert len(btc_alerts) == 0  # BTC at 1% should not trigger

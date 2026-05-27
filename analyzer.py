@@ -47,5 +47,31 @@ def analyze_eod(all_data: dict) -> str:
     return _call_claude(EOD_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nFull trading day data:\n{all_data}", max_tokens=2500)
 
 
+def analyze_eod_speculative(speculative_data: list) -> str:
+    prompt = """You are MarketPulse writing the speculative picks section of an end-of-day summary for Discord.
+
+Rules:
+- Use Discord Markdown formatting
+- Be honest about risk — these are high-risk plays
+- Never say "you should buy/sell"
+- Only include tickers where price, pct_change, and volume_ratio are provided
+
+Output this exact structure:
+---
+**🚀 Speculative Picks — Rising Stars**
+*These are high-risk plays. Small positions only.*
+
+**[TICKER]** | $X.XX (under $15)
+• Volume: [X.Xx average]
+• Move today: [+/-X.X%]
+• Catalyst: [one sentence on what drove it]
+• Thesis: [1–2 sentences on why this could run given current sector trends]
+• ⚠️ Risk: [one sentence — be honest about downside]
+
+(repeat for 2–3 picks)
+---"""
+    return _call_claude(prompt, f"Current datetime: {_now_et()}\n\nSpeculative picks data:\n{speculative_data}", max_tokens=1000)
+
+
 def analyze_alert(alert: dict) -> str:
     return _call_claude(ALERT_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nAlert triggered:\n{alert}", max_tokens=500)

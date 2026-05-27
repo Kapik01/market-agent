@@ -17,6 +17,7 @@ from fetcher import (
 from analyzer import (
     analyze_stocks, analyze_crypto, analyze_forex,
     analyze_commodities, analyze_eod, analyze_alert,
+    analyze_eod_speculative,
 )
 from poster import post_to_discord, post_with_retry
 from alerts import (
@@ -73,9 +74,13 @@ def run_eod() -> None:
             "fundamentals": fetch_stock_fundamentals(),
             "speculative": fetch_speculative_picks(),
         }
-        message = analyze_eod(all_data)
-        post_to_discord(DISCORD_WEBHOOK_DAILY_SUMMARY, message)
-        logging.info("Posted EOD summary")
+        # Post day review + long-term picks
+        main_summary = analyze_eod(all_data)
+        post_to_discord(DISCORD_WEBHOOK_DAILY_SUMMARY, main_summary)
+        # Post speculative picks separately (avoids 2000-char Discord truncation)
+        spec_summary = analyze_eod_speculative(all_data.get("speculative", []))
+        post_to_discord(DISCORD_WEBHOOK_DAILY_SUMMARY, spec_summary)
+        logging.info("Posted EOD summary (2 parts)")
     except Exception as e:
         logging.error(f"EOD summary failed: {e}")
 

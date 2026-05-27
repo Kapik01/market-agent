@@ -146,19 +146,6 @@ Output this exact structure:
 
 (repeat for 2–3 picks)
 
----
-
-**🚀 Speculative Picks — Rising Stars**
-*These are high-risk plays. Small positions only.*
-
-**[TICKER]** | $X.XX (under $15)
-• Volume: [X.Xx average]
-• Move today: [+/-X.X%]
-• Catalyst: [one sentence on what drove it]
-• Thesis: [1–2 sentences on why this could run further given current sector trends]
-• ⚠️ Risk: [one sentence — be honest about downside]
-
-(repeat for 2–3 picks)
 ---"""
 
 

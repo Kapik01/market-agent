@@ -5,8 +5,8 @@ import logging
 from datetime import datetime, timedelta
 from config import (
     ALERT_INDEX_THRESHOLD, ALERT_STOCK_THRESHOLD,
-    ALERT_CRYPTO_BTC_ETH_THRESHOLD, ALERT_COMMODITY_THRESHOLD,
-    ALERT_COOLDOWN_MINUTES, ALERT_STATE_PATH,
+    ALERT_CRYPTO_BTC_ETH_THRESHOLD, ALERT_CRYPTO_TOP10_THRESHOLD,
+    ALERT_COMMODITY_THRESHOLD, ALERT_COOLDOWN_MINUTES, ALERT_STATE_PATH,
 )
 
 logger = logging.getLogger(__name__)
@@ -99,6 +99,21 @@ def check_thresholds(market_data: dict) -> list[dict]:
                 "key": f"{symbol}_crypto_1h_{direction}",
                 "type": "crypto", "ticker": symbol,
                 "pct_change": change_1h, "price": crypto[symbol]["price"],
+                "direction": direction, "timeframe": "1h",
+            })
+
+    # Check top-10 altcoins (excluding BTC/ETH which are checked above)
+    btc_eth = {"BTC", "ETH"}
+    for symbol, data in crypto.items():
+        if symbol in btc_eth:
+            continue
+        change_1h = data.get("change_1h") or 0
+        if abs(change_1h) >= ALERT_CRYPTO_TOP10_THRESHOLD:
+            direction = "UP" if change_1h > 0 else "DOWN"
+            alerts.append({
+                "key": f"{symbol}_altcoin_1h_{direction}",
+                "type": "crypto", "ticker": symbol,
+                "pct_change": change_1h, "price": data["price"],
                 "direction": direction, "timeframe": "1h",
             })
 

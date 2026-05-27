@@ -34,7 +34,7 @@ def fetch_stock_movers() -> dict:
 
                 ma20 = float(close.iloc[-20:].mean()) if len(close) >= 20 else None
                 ma50 = float(close.iloc[-50:].mean()) if len(close) >= 50 else None
-                week52_high = float(close.max())
+                high_60d = float(close.max())
 
                 signals = []
                 if volume_ratio > 2.0:
@@ -43,8 +43,8 @@ def fetch_stock_movers() -> dict:
                     signals.append("Crossed above 20-day MA")
                 if ma50 and prev <= ma50 and current > ma50:
                     signals.append("Crossed above 50-day MA")
-                if current >= week52_high * 0.99:
-                    signals.append("Near 52-week high")
+                if current >= high_60d * 0.99:
+                    signals.append("Near 60-day high")
 
                 results.append({
                     "ticker": ticker,
