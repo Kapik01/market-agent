@@ -3,7 +3,11 @@ from datetime import datetime
 import pytz
 from config import ANTHROPIC_API_KEY, MODEL
 from prompts import (
-    STOCKS_SYSTEM_PROMPT, CRYPTO_SYSTEM_PROMPT, FOREX_SYSTEM_PROMPT,
+    STOCKS_USA_SYSTEM_PROMPT, STOCKS_LONDON_SYSTEM_PROMPT,
+    STOCKS_JAPAN_SYSTEM_PROMPT, STOCKS_ASIA_SYSTEM_PROMPT,
+    PREMARKET_USA_SYSTEM_PROMPT, PREMARKET_LONDON_SYSTEM_PROMPT,
+    PREMARKET_JAPAN_SYSTEM_PROMPT, PREMARKET_ASIA_SYSTEM_PROMPT,
+    CRYPTO_SYSTEM_PROMPT, FOREX_SYSTEM_PROMPT,
     COMMODITIES_SYSTEM_PROMPT, EOD_SYSTEM_PROMPT, ALERT_SYSTEM_PROMPT,
 )
 
@@ -27,8 +31,20 @@ def _call_claude(system_prompt: str, user_content: str, max_tokens: int = 1500) 
     return message.content[0].text
 
 
-def analyze_stocks(data: dict) -> str:
-    return _call_claude(STOCKS_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nCurrent US stock market data:\n{data}")
+def analyze_stocks_usa(data: dict) -> str:
+    return _call_claude(STOCKS_USA_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nCurrent US stock market data:\n{data}")
+
+
+def analyze_stocks_london(data: dict) -> str:
+    return _call_claude(STOCKS_LONDON_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nCurrent London (LSE) stock market data:\n{data}")
+
+
+def analyze_stocks_japan(data: dict) -> str:
+    return _call_claude(STOCKS_JAPAN_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nCurrent Japan (TSE) stock market data:\n{data}")
+
+
+def analyze_stocks_asia(data: dict) -> str:
+    return _call_claude(STOCKS_ASIA_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nCurrent Asia (HKEX) stock market data:\n{data}")
 
 
 def analyze_crypto(data: dict) -> str:
@@ -44,7 +60,11 @@ def analyze_commodities(data: dict) -> str:
 
 
 def analyze_eod(all_data: dict) -> str:
-    return _call_claude(EOD_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nFull trading day data:\n{all_data}", max_tokens=2500)
+    return _call_claude(
+        EOD_SYSTEM_PROMPT,
+        f"Current datetime: {_now_et()}\n\nFull trading day data (all sessions):\n{all_data}",
+        max_tokens=2500,
+    )
 
 
 def analyze_eod_speculative(speculative_data: list) -> str:
@@ -71,6 +91,22 @@ Output this exact structure:
 (repeat for 2–3 picks)
 ---"""
     return _call_claude(prompt, f"Current datetime: {_now_et()}\n\nSpeculative picks data:\n{speculative_data}", max_tokens=1000)
+
+
+def analyze_premarket_usa(data: dict) -> str:
+    return _call_claude(PREMARKET_USA_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nPre-market data:\n{data}")
+
+
+def analyze_premarket_london(data: dict) -> str:
+    return _call_claude(PREMARKET_LONDON_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nOvernight data for London pre-market:\n{data}")
+
+
+def analyze_premarket_japan(data: dict) -> str:
+    return _call_claude(PREMARKET_JAPAN_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nOvernight data for Japan pre-market:\n{data}")
+
+
+def analyze_premarket_asia(data: dict) -> str:
+    return _call_claude(PREMARKET_ASIA_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nOvernight data for Asia pre-market:\n{data}")
 
 
 def analyze_alert(alert: dict) -> str:

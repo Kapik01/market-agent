@@ -6,20 +6,21 @@ from datetime import datetime
 from config import (
     TOP_SP500_TICKERS, SPECULATIVE_TICKERS, COMMODITY_TICKERS,
     FOREX_PAIRS, FOREX_LABELS, HIGH_IMPACT_KEYWORDS,
+    LONDON_TICKERS, JAPAN_TICKERS, ASIA_TICKERS,
 )
 
 COINGECKO_MARKETS_URL = "https://api.coingecko.com/api/v3/coins/markets"
 
 
-def fetch_stock_movers() -> dict:
-    """Fetch top S&P 500 movers with volume and breakout signals."""
+def _fetch_equity_movers(tickers: list[str]) -> dict:
+    """Shared logic: download tickers, compute movers and breakout signals."""
     try:
         data = yf.download(
-            TOP_SP500_TICKERS, period="60d", interval="1d",
+            tickers, period="60d", interval="1d",
             progress=False, group_by="ticker", auto_adjust=True,
         )
         results = []
-        for ticker in TOP_SP500_TICKERS:
+        for ticker in tickers:
             try:
                 close = data[ticker]["Close"].dropna()
                 volume = data[ticker]["Volume"].dropna()
@@ -65,6 +66,86 @@ def fetch_stock_movers() -> dict:
         }
     except Exception as e:
         return {"top_movers": [], "on_the_rise": [], "error": str(e), "timestamp": datetime.now().isoformat()}
+
+
+def fetch_stock_movers() -> dict:
+    """Fetch top S&P 500 movers (USA)."""
+    return _fetch_equity_movers(TOP_SP500_TICKERS)
+
+
+def fetch_london_movers() -> dict:
+    """Fetch top LSE (London) movers."""
+    return _fetch_equity_movers(LONDON_TICKERS)
+
+
+def fetch_japan_movers() -> dict:
+    """Fetch top TSE (Tokyo) movers."""
+    return _fetch_equity_movers(JAPAN_TICKERS)
+
+
+def fetch_asia_movers() -> dict:
+    """Fetch top HKEX (Hong Kong / Asia) movers."""
+    return _fetch_equity_movers(ASIA_TICKERS)
+
+
+US_FUTURES_TICKERS = ["ES=F", "NQ=F", "YM=F"]
+US_FUTURES_LABELS = {"ES=F": "S&P 500 (ES=F)", "NQ=F": "Nasdaq (NQ=F)", "YM=F": "Dow (YM=F)"}
+
+
+def fetch_usa_premarket() -> dict:
+    """Fetch US index futures + overnight crypto for pre-market briefing."""
+    futures = {}
+    try:
+        data = yf.download(US_FUTURES_TICKERS, period="5d", interval="1d", progress=False)
+        for ticker in US_FUTURES_TICKERS:
+            try:
+                close = data["Close"][ticker].dropna()
+                if len(close) < 2:
+                    continue
+                current, prev = float(close.iloc[-1]), float(close.iloc[-2])
+                futures[US_FUTURES_LABELS[ticker]] = {
+                    "price": round(current, 2),
+                    "pct_change": round(((current - prev) / prev) * 100, 2),
+                }
+            except (KeyError, IndexError):
+                continue
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"fetch_usa_premarket futures failed: {e}")
+
+    return {
+        "futures": futures,
+        "overnight_crypto": fetch_crypto_data(),
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
+def fetch_london_premarket() -> dict:
+    """Fetch Asia/Japan closes + forex for London pre-market briefing."""
+    return {
+        "asia_session": fetch_asia_movers(),
+        "japan_session": fetch_japan_movers(),
+        "forex": fetch_forex_data(),
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
+def fetch_japan_premarket() -> dict:
+    """Fetch prior US close + USD/JPY for Japan pre-market briefing."""
+    return {
+        "us_session": fetch_stock_movers(),
+        "forex": fetch_forex_data(),
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
+def fetch_asia_premarket() -> dict:
+    """Fetch prior US close + Japan session + forex for Asia pre-market briefing."""
+    return {
+        "us_session": fetch_stock_movers(),
+        "japan_session": fetch_japan_movers(),
+        "forex": fetch_forex_data(),
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 def fetch_crypto_data() -> dict:

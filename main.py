@@ -4,18 +4,25 @@ from datetime import datetime
 import pytz
 
 from config import (
-    DISCORD_WEBHOOK_STOCKS, DISCORD_WEBHOOK_CRYPTO, DISCORD_WEBHOOK_FOREX,
+    DISCORD_WEBHOOK_STOCKS_USA, DISCORD_WEBHOOK_STOCKS_LONDON,
+    DISCORD_WEBHOOK_STOCKS_ASIA, DISCORD_WEBHOOK_STOCKS_JAPAN,
+    DISCORD_WEBHOOK_CRYPTO, DISCORD_WEBHOOK_FOREX,
     DISCORD_WEBHOOK_COMMODITIES, DISCORD_WEBHOOK_DAILY_SUMMARY,
     DISCORD_WEBHOOK_ALERTS, LOG_PATH,
     MARKET_OPEN_HOUR, MARKET_OPEN_MINUTE, MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE,
+    TZ_LONDON, TZ_TOKYO, TZ_HONG_KONG,
 )
 from fetcher import (
-    fetch_stock_movers, fetch_crypto_data, fetch_forex_data,
+    fetch_stock_movers, fetch_london_movers, fetch_japan_movers, fetch_asia_movers,
+    fetch_usa_premarket, fetch_london_premarket, fetch_japan_premarket, fetch_asia_premarket,
+    fetch_crypto_data, fetch_forex_data,
     fetch_commodity_data, fetch_alert_prices, fetch_stock_news,
     fetch_stock_fundamentals, fetch_speculative_picks,
 )
 from analyzer import (
-    analyze_stocks, analyze_crypto, analyze_forex,
+    analyze_stocks_usa, analyze_stocks_london, analyze_stocks_japan, analyze_stocks_asia,
+    analyze_premarket_usa, analyze_premarket_london, analyze_premarket_japan, analyze_premarket_asia,
+    analyze_crypto, analyze_forex,
     analyze_commodities, analyze_eod, analyze_alert,
     analyze_eod_speculative,
 )
@@ -31,9 +38,12 @@ logging.basicConfig(
 )
 
 ET = pytz.timezone("America/New_York")
+LONDON_TZ = pytz.timezone(TZ_LONDON)
+TOKYO_TZ = pytz.timezone(TZ_TOKYO)
+HK_TZ = pytz.timezone(TZ_HONG_KONG)
 
 
-def is_market_hours() -> bool:
+def is_usa_market_hours() -> bool:
     now = datetime.now(ET)
     if now.weekday() >= 5:
         return False
@@ -42,16 +52,99 @@ def is_market_hours() -> bool:
     return open_time <= now <= close_time
 
 
+def is_london_market_hours() -> bool:
+    now = datetime.now(LONDON_TZ)
+    if now.weekday() >= 5:
+        return False
+    open_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    close_time = now.replace(hour=16, minute=30, second=0, microsecond=0)
+    return open_time <= now <= close_time
+
+
+def is_japan_market_hours() -> bool:
+    now = datetime.now(TOKYO_TZ)
+    if now.weekday() >= 5:
+        return False
+    open_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    close_time = now.replace(hour=15, minute=30, second=0, microsecond=0)
+    return open_time <= now <= close_time
+
+
+def is_asia_market_hours() -> bool:
+    now = datetime.now(HK_TZ)
+    if now.weekday() >= 5:
+        return False
+    open_time = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    close_time = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    return open_time <= now <= close_time
+
+
+def is_usa_premarket() -> bool:
+    now = datetime.now(ET)
+    if now.weekday() >= 5:
+        return False
+    start = now.replace(hour=8, minute=30, second=0, microsecond=0)
+    end = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    return start <= now < end
+
+
+def is_london_premarket() -> bool:
+    now = datetime.now(LONDON_TZ)
+    if now.weekday() >= 5:
+        return False
+    start = now.replace(hour=7, minute=0, second=0, microsecond=0)
+    end = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    return start <= now < end
+
+
+def is_japan_premarket() -> bool:
+    now = datetime.now(TOKYO_TZ)
+    if now.weekday() >= 5:
+        return False
+    start = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    end = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    return start <= now < end
+
+
+def is_asia_premarket() -> bool:
+    now = datetime.now(HK_TZ)
+    if now.weekday() >= 5:
+        return False
+    start = now.replace(hour=8, minute=30, second=0, microsecond=0)
+    end = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    return start <= now < end
+
+
+# Keep old name as alias so existing tests still pass during transition
+is_market_hours = is_usa_market_hours
+
+
 def run_hourly() -> None:
     channels = [
         (fetch_crypto_data, analyze_crypto, DISCORD_WEBHOOK_CRYPTO, "crypto"),
         (fetch_forex_data, analyze_forex, DISCORD_WEBHOOK_FOREX, "forex"),
     ]
-    if is_market_hours():
-        channels += [
-            (fetch_stock_movers, analyze_stocks, DISCORD_WEBHOOK_STOCKS, "stocks"),
-            (fetch_commodity_data, analyze_commodities, DISCORD_WEBHOOK_COMMODITIES, "commodities"),
-        ]
+
+    # Pre-market briefings (~1 hour before each session opens)
+    if is_asia_premarket():
+        channels.append((fetch_asia_premarket, analyze_premarket_asia, DISCORD_WEBHOOK_STOCKS_ASIA, "premarket-asia"))
+    if is_japan_premarket():
+        channels.append((fetch_japan_premarket, analyze_premarket_japan, DISCORD_WEBHOOK_STOCKS_JAPAN, "premarket-japan"))
+    if is_london_premarket():
+        channels.append((fetch_london_premarket, analyze_premarket_london, DISCORD_WEBHOOK_STOCKS_LONDON, "premarket-london"))
+    if is_usa_premarket():
+        channels.append((fetch_usa_premarket, analyze_premarket_usa, DISCORD_WEBHOOK_STOCKS_USA, "premarket-usa"))
+
+    # Live session updates
+    if is_asia_market_hours():
+        channels.append((fetch_asia_movers, analyze_stocks_asia, DISCORD_WEBHOOK_STOCKS_ASIA, "stocks-asia"))
+    if is_japan_market_hours():
+        channels.append((fetch_japan_movers, analyze_stocks_japan, DISCORD_WEBHOOK_STOCKS_JAPAN, "stocks-japan"))
+    if is_london_market_hours():
+        channels.append((fetch_london_movers, analyze_stocks_london, DISCORD_WEBHOOK_STOCKS_LONDON, "stocks-london"))
+    if is_usa_market_hours():
+        channels.append((fetch_stock_movers, analyze_stocks_usa, DISCORD_WEBHOOK_STOCKS_USA, "stocks-usa"))
+        channels.append((fetch_commodity_data, analyze_commodities, DISCORD_WEBHOOK_COMMODITIES, "commodities"))
 
     for fetch_fn, analyze_fn, webhook, name in channels:
         try:
@@ -67,7 +160,10 @@ def run_hourly() -> None:
 def run_eod() -> None:
     try:
         all_data = {
-            "stocks": fetch_stock_movers(),
+            "stocks_usa": fetch_stock_movers(),
+            "stocks_london": fetch_london_movers(),
+            "stocks_japan": fetch_japan_movers(),
+            "stocks_asia": fetch_asia_movers(),
             "crypto": fetch_crypto_data(),
             "forex": fetch_forex_data(),
             "commodities": fetch_commodity_data(),
@@ -78,7 +174,7 @@ def run_eod() -> None:
         main_summary = analyze_eod(all_data)
         post_to_discord(DISCORD_WEBHOOK_DAILY_SUMMARY, main_summary)
         # Post speculative picks separately (avoids 2000-char Discord truncation)
-        spec_summary = analyze_eod_speculative(all_data.get("speculative", []))
+        spec_summary = analyze_eod_speculative(all_data.get("speculative", []))  # noqa: E501
         post_to_discord(DISCORD_WEBHOOK_DAILY_SUMMARY, spec_summary)
         logging.info("Posted EOD summary (2 parts)")
     except Exception as e:

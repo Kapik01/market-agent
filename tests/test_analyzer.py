@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 import pytest
-from analyzer import analyze_stocks, analyze_crypto, analyze_eod, analyze_alert
+from analyzer import analyze_stocks_usa, analyze_crypto, analyze_eod, analyze_alert
 
 
 def _mock_claude_response(text: str):
@@ -9,26 +9,26 @@ def _mock_claude_response(text: str):
     return mock_msg
 
 
-def test_analyze_stocks_returns_string():
+def test_analyze_stocks_usa_returns_string():
     mock_client = MagicMock()
-    mock_client.messages.create.return_value = _mock_claude_response("📊 **MARKET PULSE — STOCKS**")
+    mock_client.messages.create.return_value = _mock_claude_response("📊 **MARKET PULSE — US STOCKS**")
     with patch("analyzer.anthropic.Anthropic", return_value=mock_client):
         import importlib
         import analyzer
         importlib.reload(analyzer)
-        result = analyzer.analyze_stocks({"top_movers": [], "on_the_rise": []})
+        result = analyzer.analyze_stocks_usa({"top_movers": [], "on_the_rise": []})
     assert isinstance(result, str)
     assert len(result) > 0
 
 
-def test_analyze_stocks_passes_system_prompt_with_cache_control():
+def test_analyze_stocks_usa_passes_system_prompt_with_cache_control():
     mock_client = MagicMock()
     mock_client.messages.create.return_value = _mock_claude_response("ok")
     with patch("analyzer.anthropic.Anthropic", return_value=mock_client):
         import importlib
         import analyzer
         importlib.reload(analyzer)
-        analyzer.analyze_stocks({"top_movers": [], "on_the_rise": []})
+        analyzer.analyze_stocks_usa({"top_movers": [], "on_the_rise": []})
 
     call_kwargs = mock_client.messages.create.call_args[1]
     system = call_kwargs["system"]

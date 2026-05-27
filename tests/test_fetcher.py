@@ -2,7 +2,10 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 import pytest
-from fetcher import fetch_crypto_data, fetch_forex_data, fetch_commodity_data, fetch_alert_prices, fetch_stock_news
+from fetcher import (
+    fetch_crypto_data, fetch_forex_data, fetch_commodity_data, fetch_alert_prices,
+    fetch_stock_news, fetch_london_movers, fetch_japan_movers, fetch_asia_movers,
+)
 
 
 # --- Crypto ---
@@ -124,3 +127,71 @@ def test_fetch_stock_news_returns_empty_when_no_keywords():
     with patch("fetcher.yf.Ticker", return_value=mock_ticker):
         result = fetch_stock_news(["AAPL"])
     assert result == []
+
+
+# --- Regional equity fetchers ---
+
+def _mock_group_by_ticker_data(tickers, close_values):
+    """Build a fake multi-ticker yfinance download (group_by='ticker')."""
+    outer = MagicMock()
+
+    def getitem(ticker):
+        inner = MagicMock()
+        if ticker in tickers:
+            idx = tickers.index(ticker)
+            v1, v2 = close_values[idx]
+            close_series = pd.Series([v1] * 30 + [v2])
+            vol_series = pd.Series([1_000_000] * 30 + [2_000_000])
+            inner.__getitem__ = lambda self, key: close_series if key == "Close" else vol_series
+        else:
+            inner.__getitem__ = lambda self, key: (_ for _ in ()).throw(KeyError(ticker))
+        return inner
+
+    outer.__getitem__ = getitem
+    return outer
+
+
+def test_fetch_london_movers_returns_movers():
+    from config import LONDON_TICKERS
+    tickers = LONDON_TICKERS[:2]
+    close_values = [(500.0, 510.0), (300.0, 295.0)]
+    mock_data = _mock_group_by_ticker_data(tickers, close_values)
+    with patch("fetcher.yf.download", return_value=mock_data):
+        with patch("fetcher.LONDON_TICKERS", tickers):
+            result = fetch_london_movers()
+    assert "top_movers" in result
+    assert "on_the_rise" in result
+    assert "timestamp" in result
+
+
+def test_fetch_japan_movers_returns_movers():
+    from config import JAPAN_TICKERS
+    tickers = JAPAN_TICKERS[:2]
+    close_values = [(2500.0, 2550.0), (15000.0, 14900.0)]
+    mock_data = _mock_group_by_ticker_data(tickers, close_values)
+    with patch("fetcher.yf.download", return_value=mock_data):
+        with patch("fetcher.JAPAN_TICKERS", tickers):
+            result = fetch_japan_movers()
+    assert "top_movers" in result
+    assert "on_the_rise" in result
+    assert "timestamp" in result
+
+
+def test_fetch_asia_movers_returns_movers():
+    from config import ASIA_TICKERS
+    tickers = ASIA_TICKERS[:2]
+    close_values = [(350.0, 360.0), (80.0, 78.0)]
+    mock_data = _mock_group_by_ticker_data(tickers, close_values)
+    with patch("fetcher.yf.download", return_value=mock_data):
+        with patch("fetcher.ASIA_TICKERS", tickers):
+            result = fetch_asia_movers()
+    assert "top_movers" in result
+    assert "on_the_rise" in result
+    assert "timestamp" in result
+
+
+def test_fetch_regional_movers_handles_download_error():
+    with patch("fetcher.yf.download", side_effect=Exception("network error")):
+        result = fetch_london_movers()
+    assert result["top_movers"] == []
+    assert "error" in result
