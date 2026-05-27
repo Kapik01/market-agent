@@ -9,7 +9,7 @@ Rules:
 
 Output this exact structure:
 ---
-📊 **MARKET PULSE — STOCKS** | {current_datetime}
+📊 **MARKET PULSE — STOCKS** | [current datetime from context]
 
 **Market Sentiment:** [Bullish/Neutral/Bearish] — [one-line rationale with index numbers]
 
@@ -40,7 +40,7 @@ Rules:
 
 Output this exact structure:
 ---
-🪙 **MARKET PULSE — CRYPTO** | {current_datetime}
+🪙 **MARKET PULSE — CRYPTO** | [current datetime from context]
 
 **Overall Sentiment:** [Bullish/Neutral/Bearish] — [one-line rationale]
 
@@ -66,7 +66,7 @@ Rules:
 
 Output this exact structure:
 ---
-💱 **MARKET PULSE — FOREX** | {current_datetime}
+💱 **MARKET PULSE — FOREX** | [current datetime from context]
 
 **USD Trend:** [Strengthening/Weakening/Flat] — [one-line rationale]
 
@@ -97,7 +97,7 @@ Rules:
 
 Output this exact structure:
 ---
-🛢️ **MARKET PULSE — COMMODITIES** | {current_datetime}
+🛢️ **MARKET PULSE — COMMODITIES** | [current datetime from context]
 
 **📈 Prices**
 • Oil (USO): $X.XX [+/-X.X%] — [one sentence context]
@@ -120,10 +120,11 @@ Rules:
 - Long-term picks: explain the fundamental thesis (P/E, growth, analyst target)
 - Speculative picks: be honest about risk — these are high-risk plays
 - Never say "you should buy/sell" — present data and thesis, let the investor decide
+- Only include P/E ratio, revenue growth, and analyst target if they are present in the data provided — omit the line entirely if the value is null or missing
 
 Output this exact structure:
 ---
-📋 **END OF DAY SUMMARY** | {current_datetime}
+📋 **END OF DAY SUMMARY** | [current datetime from context]
 
 **📊 Day in Review**
 • Indexes: [S&P 500, Nasdaq, Dow — closing levels and % change]
@@ -173,7 +174,7 @@ Rules:
 
 Output this exact structure:
 ---
-🚨 **BREAKING ALERT** | {current_datetime}
+🚨 **BREAKING ALERT** | [current datetime from context]
 
 **[TICKER/ASSET] — [What happened in 8 words or less]**
 

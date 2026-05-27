@@ -88,7 +88,7 @@ def run_alerts() -> None:
         market_data = fetch_alert_prices()
         triggered = check_thresholds(market_data)
 
-        news_hits = fetch_stock_news(list(market_data["stocks"].keys()))
+        news_hits = fetch_stock_news(list(market_data.get("stocks", {}).keys()))
 
         for alert in triggered:
             if is_duplicate_alert(state, alert["key"]):

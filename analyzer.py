@@ -22,6 +22,8 @@ def _call_claude(system_prompt: str, user_content: str, max_tokens: int = 1500) 
         system=[{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user_content}],
     )
+    if not message.content:
+        raise ValueError(f"Claude returned empty content (stop_reason={message.stop_reason})")
     return message.content[0].text
 
 

@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 import logging
 from datetime import datetime, timedelta
 from config import (
@@ -22,8 +23,11 @@ def load_alert_state() -> dict:
 
 
 def save_alert_state(state: dict) -> None:
-    with open(ALERT_STATE_PATH, "w") as f:
+    dir_ = os.path.dirname(os.path.abspath(ALERT_STATE_PATH))
+    with tempfile.NamedTemporaryFile("w", dir=dir_, delete=False, suffix=".tmp") as f:
         json.dump(state, f)
+        tmp_path = f.name
+    os.replace(tmp_path, ALERT_STATE_PATH)
 
 
 def clear_stale_alerts(state: dict) -> dict:
