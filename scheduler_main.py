@@ -4,17 +4,18 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-import pytz
-from apscheduler.schedulers.blocking import BlockingScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor
-
-from main import run_hourly, run_eod, run_alerts
-
+# Configure stdout logging BEFORE importing main (main.py also calls basicConfig)
 logging.basicConfig(
     stream=sys.stdout,
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
+import pytz
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
+
+from main import run_hourly, run_eod, run_alerts
 
 ET = pytz.timezone("America/New_York")
 
