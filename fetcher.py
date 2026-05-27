@@ -1,3 +1,4 @@
+import logging
 import yfinance as yf
 import requests
 import pandas as pd
@@ -164,8 +165,8 @@ def fetch_alert_prices() -> dict:
                 }
             except (KeyError, IndexError, ValueError):
                 continue
-    except Exception:
-        pass
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"fetch_alert_prices stocks download failed: {e}")
 
     crypto = {}
     try:
@@ -207,7 +208,7 @@ def fetch_stock_news(tickers: list[str]) -> list[dict]:
 
 
 def fetch_stock_fundamentals() -> list[dict]:
-    """Fetch fundamental data for the top 20 S&P 500 tickers for EOD picks."""
+    """Fetch fundamental data for the top 20 S&P 500 tickers for EOD picks. Makes 20 serial HTTP calls — expect 20-60s latency."""
     results = []
     for ticker in TOP_SP500_TICKERS[:20]:
         try:
@@ -256,7 +257,7 @@ def fetch_speculative_picks() -> list[dict]:
                 })
             except (KeyError, IndexError, ValueError):
                 continue
-    except Exception:
-        pass
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"fetch_speculative_picks download failed: {e}")
     results.sort(key=lambda x: x["volume_ratio"], reverse=True)
     return results[:10]
