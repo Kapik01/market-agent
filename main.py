@@ -24,7 +24,7 @@ from analyzer import (
     analyze_premarket_usa, analyze_premarket_london, analyze_premarket_japan, analyze_premarket_asia,
     analyze_crypto, analyze_forex,
     analyze_commodities, analyze_eod, analyze_alert,
-    analyze_eod_speculative,
+    analyze_eod_speculative, analyze_watchlist,
 )
 from poster import post_to_discord, post_with_retry
 from alerts import (
@@ -179,6 +179,19 @@ def run_eod() -> None:
         logging.info("Posted EOD summary (2 parts)")
     except Exception as e:
         logging.error(f"EOD summary failed: {e}")
+
+
+def run_watchlist() -> None:
+    try:
+        data = {
+            "stocks": fetch_stock_movers(),
+            "fundamentals": fetch_stock_fundamentals(),
+        }
+        message = analyze_watchlist(data)
+        post_with_retry(DISCORD_WEBHOOK_ALERTS, message, retries=3)
+        logging.info("Posted tomorrow's watchlist")
+    except Exception as e:
+        logging.error(f"Watchlist failed: {e}")
 
 
 def run_alerts() -> None:

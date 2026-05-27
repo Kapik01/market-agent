@@ -9,6 +9,7 @@ from prompts import (
     PREMARKET_JAPAN_SYSTEM_PROMPT, PREMARKET_ASIA_SYSTEM_PROMPT,
     CRYPTO_SYSTEM_PROMPT, FOREX_SYSTEM_PROMPT,
     COMMODITIES_SYSTEM_PROMPT, EOD_SYSTEM_PROMPT, ALERT_SYSTEM_PROMPT,
+    WATCHLIST_SYSTEM_PROMPT,
 )
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -107,6 +108,14 @@ def analyze_premarket_japan(data: dict) -> str:
 
 def analyze_premarket_asia(data: dict) -> str:
     return _call_claude(PREMARKET_ASIA_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nOvernight data for Asia pre-market:\n{data}")
+
+
+def analyze_watchlist(data: dict) -> str:
+    return _call_claude(
+        WATCHLIST_SYSTEM_PROMPT,
+        f"Current datetime: {_now_et()}\n\nToday's market data for watchlist analysis:\n{data}",
+        max_tokens=1500,
+    )
 
 
 def analyze_alert(alert: dict) -> str:
