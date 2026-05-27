@@ -38,7 +38,8 @@ def _start_health_server():
 threading.Thread(target=_start_health_server, daemon=True).start()
 
 scheduler = BlockingScheduler(
-    executors={"default": ThreadPoolExecutor(1)},
+    executors={"default": ThreadPoolExecutor(4)},
+    job_defaults={"misfire_grace_time": 60},
     timezone=ET,
 )
 
