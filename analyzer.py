@@ -118,5 +118,11 @@ def analyze_watchlist(data: dict) -> str:
     )
 
 
-def analyze_alert(alert: dict) -> str:
-    return _call_claude(ALERT_SYSTEM_PROMPT, f"Current datetime: {_now_et()}\n\nAlert triggered:\n{alert}", max_tokens=500)
+def analyze_alert(alert: dict, news_headlines: list[str] | None = None) -> str:
+    context = f"Current datetime: {_now_et()}\n\nAlert triggered:\n{alert}"
+    if news_headlines:
+        lines = "\n".join(f"- {h}" for h in news_headlines)
+        context += f"\n\nRecent news headlines for {alert.get('ticker', 'this asset')}:\n{lines}"
+    else:
+        context += "\n\nRecent news headlines: None available."
+    return _call_claude(ALERT_SYSTEM_PROMPT, context, max_tokens=800)

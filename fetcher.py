@@ -288,6 +288,15 @@ def fetch_stock_news(tickers: list[str]) -> list[dict]:
     return hits
 
 
+def fetch_ticker_recent_news(ticker: str) -> list[str]:
+    """Fetch up to 5 recent headlines for a single ticker, no keyword filter."""
+    try:
+        news = yf.Ticker(ticker).news
+        return [a["title"] for a in news[:5] if a.get("title")]
+    except Exception:
+        return []
+
+
 def fetch_stock_fundamentals() -> list[dict]:
     """Fetch fundamental data for the top 20 S&P 500 tickers for EOD picks. Makes 20 serial HTTP calls — expect 20-60s latency."""
     results = []

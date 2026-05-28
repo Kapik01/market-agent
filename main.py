@@ -18,6 +18,7 @@ from fetcher import (
     fetch_crypto_data, fetch_forex_data,
     fetch_commodity_data, fetch_alert_prices, fetch_stock_news,
     fetch_stock_fundamentals, fetch_speculative_picks,
+    fetch_ticker_recent_news,
 )
 from analyzer import (
     analyze_stocks_usa, analyze_stocks_london, analyze_stocks_japan, analyze_stocks_asia,
@@ -146,9 +147,21 @@ def run_hourly() -> None:
         channels.append((fetch_stock_movers, analyze_stocks_usa, DISCORD_WEBHOOK_STOCKS_USA, "stocks-usa"))
         channels.append((fetch_commodity_data, analyze_commodities, DISCORD_WEBHOOK_COMMODITIES, "commodities"))
 
+    equity_channels = {
+        "stocks-usa", "stocks-london", "stocks-japan", "stocks-asia",
+        "premarket-usa", "premarket-london", "premarket-japan", "premarket-asia",
+    }
+
     for fetch_fn, analyze_fn, webhook, name in channels:
         try:
             data = fetch_fn()
+            if name in equity_channels:
+                top_tickers = [m["ticker"] for m in data.get("top_movers", [])[:5]]
+                data["recent_news"] = {t: fetch_ticker_recent_news(t) for t in top_tickers}
+            elif name == "commodities":
+                data["recent_news"] = {
+                    t: fetch_ticker_recent_news(t) for t in ["USO", "GLD"]
+                }
             message = analyze_fn(data)
             post_to_discord(webhook, message)
             logging.info(f"Posted {name} hourly update")
@@ -208,7 +221,10 @@ def run_alerts() -> None:
             if is_duplicate_alert(state, alert["key"]):
                 continue
             try:
-                message = analyze_alert(alert)
+                news_headlines = []
+                if alert.get("type") in ("stock", "index", "commodity"):
+                    news_headlines = fetch_ticker_recent_news(alert["ticker"])
+                message = analyze_alert(alert, news_headlines)
                 if post_with_retry(DISCORD_WEBHOOK_ALERTS, message, retries=3):
                     state = mark_alert_fired(state, alert["key"])
                     logging.info(f"Alert fired: {alert['key']}")
