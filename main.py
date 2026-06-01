@@ -122,7 +122,6 @@ is_market_hours = is_usa_market_hours
 
 def run_hourly() -> None:
     channels = [
-        (fetch_crypto_data, analyze_crypto, DISCORD_WEBHOOK_CRYPTO, "crypto"),
         (fetch_forex_data, analyze_forex, DISCORD_WEBHOOK_FOREX, "forex"),
     ]
 
