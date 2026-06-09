@@ -121,9 +121,7 @@ is_market_hours = is_usa_market_hours
 
 
 def run_hourly() -> None:
-    channels = [
-        (fetch_forex_data, analyze_forex, DISCORD_WEBHOOK_FOREX, "forex"),
-    ]
+    channels = []
 
     # Pre-market briefings (~1 hour before each session opens)
     if is_asia_premarket():

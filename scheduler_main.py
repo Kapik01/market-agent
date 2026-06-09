@@ -43,7 +43,7 @@ scheduler = BlockingScheduler(
     timezone=ET,
 )
 
-scheduler.add_job(run_alerts, "interval", minutes=5, id="alerts")
+scheduler.add_job(run_alerts, "interval", minutes=30, id="alerts")
 scheduler.add_job(run_hourly, "interval", hours=1, id="hourly")
 scheduler.add_job(run_watchlist, "cron", day_of_week="mon-fri", hour=15, minute=30, id="watchlist")
 scheduler.add_job(run_eod, "cron", day_of_week="mon-fri", hour=16, minute=30, id="eod")
